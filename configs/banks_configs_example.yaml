@@ -1,0 +1,116 @@
+# =======================================================
+# 銀行帳單設定範本 (Example Config)
+# 使用說明：
+# 1. 請複製此檔案並重新命名為 'banks_config.yaml'
+# 2. 根據您的實際銀行帳單 CSV/HTML 內容修改 'columns_mapping' 左側的欄位名稱
+# 3. 'encoding' 通常為 'utf-8' 或 'cp950' (Big5)
+# =======================================================
+
+# -------------------------------------------------------
+# 玉山銀行 (E.Sun Bank)
+# -------------------------------------------------------
+esun_bank:
+  bank_name: "玉山銀行"
+  file_type: "csv"       # 支援 csv
+  encoding: "utf-8"      # 常見編碼：cp950 (Big5) 或 utf-8
+  header_keyword: "交易日期" # 用來定位表格標頭的關鍵字
+  columns_mapping:
+    # [CSV原始欄位]: [ETL標準欄位]
+    # 注意：右側 Key 必須對應 etl.py 中的全域常數
+    交易日期: Transaction_Date
+    入帳日期: Posting_Date
+    卡號末四碼: Card_No
+    # 玉山特殊邏輯：外幣交易通常包含地點與幣別，對應到 Consumption_Place 供後續 Regex 拆解
+    交易說明: Merchant           # 若是國內交易通常直接是商店名
+    外幣金額: Currency_Amount
+    臺幣金額: Amount
+
+# -------------------------------------------------------
+# 國泰世華 (Cube / Cathay)
+# -------------------------------------------------------
+cube_bank:
+  bank_name: "國泰世華"
+  file_type: "csv"
+  encoding: "utf-8"
+  header_keyword: "信用卡號" # 國泰 CSV 常見的起始欄位
+  columns_mapping:
+    交易日: Transaction_Date
+    入帳日: Posting_Date
+    卡號末四碼: Card_No
+    交易說明: Merchant
+    臺幣金額: Amount
+    # 國泰特殊邏輯：消費地與幣別常合併在同一欄 (e.g., "TW / TWD")
+    # 請對應到 Raw_Country_Currency 以觸發 parse_cube_details
+    消費地/幣別: Raw_Country_Currency 
+
+# -------------------------------------------------------
+# 中國信託 (CTBC)
+# -------------------------------------------------------
+ctbc_bank:
+  bank_name: "中國信託"
+  file_type: "csv"
+  encoding: "cp950" 
+  header_keyword: "消費日期"
+  columns_mapping:
+    消費日期: Transaction_Date
+    入帳日期: Posting_Date
+    卡號末四碼: Card_No
+    商店名稱: Merchant
+    臺幣金額: Amount
+    外幣金額: Currency_Amount
+    幣別: Currency_Type
+
+# -------------------------------------------------------
+# 華南銀行 (HNCB)
+# -------------------------------------------------------
+hncb_bank:
+  bank_name: "華南銀行"
+  file_type: "html"      # 重要：觸發 BeautifulSoup 解析邏輯
+  encoding: "Big5"      # 華南郵件附件通常是 HTML，多為 utf-8
+  header_keyword: "交易日期"
+  columns_mapping:
+    交易日期: Transaction_Date
+    入帳日期: Posting_Date
+    卡號末四碼: Card_No
+    摘要: Merchant
+    金額: Amount
+    # 華南 HTML 表格通常較亂，需確保欄位名稱完全匹配 HTML 內的文字
+
+# =======================================================
+# 待社群貢獻 (Community Contributions Needed)
+# 如果您持有以下銀行的 CSV 帳單，歡迎發送 PR 補完設定！
+# =======================================================
+
+# -------------------------------------------------------
+# [待驗證] 台新銀行 (Taishin Bank) - Richart / 一般卡
+# -------------------------------------------------------
+# taishin_bank:
+#   bank_name: "台新銀行"
+#   file_type: "csv"
+#   encoding: "big5"  # 猜測值，通常是 big5 或 utf-8
+#   header_keyword: "交易日期" # 待確認
+#   columns_mapping:
+#     交易日期: Transaction_Date    # 需確認 CSV 實際標頭是否為這四個字
+#     入帳日期: Posting_Date
+#     交易摘要: Merchant           # 台新常包含 "分期" 等字眼
+#     臺幣金額: Amount
+#     卡號末四碼: Card_No
+
+# -------------------------------------------------------
+# [待驗證] 富邦銀行 (Fubon Bank) - Costco / J卡
+# -------------------------------------------------------
+# fubon_bank:
+#   bank_name: "台北富邦"
+#   file_type: "csv"
+#   encoding: "big5"
+#   header_keyword: "消費日" # 待確認
+#   columns_mapping:
+#     消費日: Transaction_Date
+#     入帳日: Posting_Date
+#     交易敘述: Merchant
+#     臺幣金額: Amount
+#     外幣金額: Currency_Amount
+#     幣別: Currency_Type
+
+
+
