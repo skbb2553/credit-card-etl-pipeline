@@ -10,16 +10,27 @@ warnings.filterwarnings("ignore", "This pattern is interpreted as a regular expr
 # ==========================================
 # 0. 路徑與 Schema 配置
 # ==========================================
+
+# 目錄路徑設定
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(BASE_DIR, 'configs')
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 
-INPUT_FILE = os.path.join(DATA_DIR, 'result_all_banks.csv')
-OUTPUT_FILE = os.path.join(DATA_DIR, 'refined_all_banks.csv')
+# 檔名設定
+FILE_MERCHANTS = 'merchants.csv'                    # 真實商家規則
+FILE_EXAMPLE_MERCHANTS = 'example_merchants.csv'    # 範本商家規則
+FILE_CHANNELS = 'payment_gateway.csv'               # 支付通路規則 
+FILE_CARDS = 'cards.csv'                            # 卡片對照表 
+FILE_EXCLUDED_TYPES = 'transaction_types.yaml'          # 交易分類關鍵字設定
 
-# 載入 YAML (只剩關鍵字設定)
-YAML_CONFIG_FILE = os.path.join(CONFIG_DIR, 'mapping_rules.yaml')
+# 輸入輸出檔名
+FILE_INPUT_DATA = 'result_all_banks.csv'
+FILE_OUTPUT_DATA = 'refined_all_banks.csv'
 
+# 載入 YAML 設定
+YAML_CONFIG_FILE = os.path.join(CONFIG_DIR, FILE_EXCLUDED_TYPES)
+
+# 統一欄位名稱定義 (核心依賴，請勿隨意修改)
 COLUMN_TYPES = {
     'Currency_Amount': float,  
     'Payment_Amount': float,   
@@ -49,7 +60,7 @@ def load_yaml_config(config_path):
         return yaml.safe_load(f)
 
 def load_payment_rules(config_dir):
-    rule_path = os.path.join(config_dir, 'payment_regex_rules.csv') 
+    rule_path = os.path.join(config_dir, FILE_CHANNELS)
     if not os.path.exists(rule_path):
         print(f"⚠️ 警告: 找不到支付規則檔 {rule_path}")
         return []
@@ -64,10 +75,21 @@ def load_payment_rules(config_dir):
         return []
 
 def load_merchant_regex_rules(config_dir):
-    rule_path = os.path.join(config_dir, 'merchant_regex_rules.csv')
-    if not os.path.exists(rule_path):
-        print(f"⚠️ 警告: 找不到商家規則檔 {rule_path}")
+    # 定義兩個路徑：真實路徑 & 範本路徑
+    real_path = os.path.join(config_dir, FILE_MERCHANTS)
+    example_path = os.path.join(config_dir, FILE_EXAMPLE_MERCHANTS)
+    
+    # 判斷邏輯：優先讀取真實檔，若無則讀取範本檔
+    if os.path.exists(real_path):
+        rule_path = real_path
+        print(f"   🔍 [Config] 使用真實商家規則: {FILE_MERCHANTS}")
+    elif os.path.exists(example_path):
+        rule_path = example_path
+        print(f"   ⚠️ [Config] 找不到真實規則，切換使用範本規則: {FILE_EXAMPLE_MERCHANTS}")
+    else:
+        print(f"   ❌ [Config] 警告: 找不到任何商家規則檔！")
         return []
+
     try:
         df_rules = pd.read_csv(rule_path, dtype=str)
         if 'Priority' in df_rules.columns:
@@ -91,7 +113,7 @@ def load_merchant_regex_rules(config_dir):
 
 def apply_card_mapping(df, config_dir):
     print(">>> 執行邏輯: 讀取對照表進行卡號歸戶與標記...")
-    mapping_file = os.path.join(config_dir, 'card_mapping.csv')
+    mapping_file = os.path.join(config_dir, FILE_CARDS)
     if not os.path.exists(mapping_file):
         print(f"❌ 錯誤: 找不到 {mapping_file}")
         return df
@@ -351,12 +373,15 @@ def main():
     payment_rules_list = load_payment_rules(CONFIG_DIR)
     merchant_rules_list = load_merchant_regex_rules(CONFIG_DIR)  
     config = load_yaml_config(YAML_CONFIG_FILE)
+
+    input_path = os.path.join(DATA_DIR, FILE_INPUT_DATA)
+    output_path = os.path.join(DATA_DIR, FILE_OUTPUT_DATA)
     
-    if not os.path.exists(INPUT_FILE):
-        print(f"❌ 找不到輸入檔: {INPUT_FILE}")
+    if not os.path.exists(input_path):
+        print(f"❌ 找不到輸入檔: {input_path}")
         return
         
-    df = pd.read_csv(INPUT_FILE, dtype=COLUMN_TYPES)
+    df = pd.read_csv(input_path, dtype=COLUMN_TYPES)
     print(f"成功讀取 {len(df)} 筆資料")
 
     # 型態強制與初始化
@@ -404,8 +429,8 @@ def main():
     ]
     
     df_final = df[cols_order]
-    df_final.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
-    print(f"✅ 處理完成！結果已輸出至 {OUTPUT_FILE}")
+    df_final.to_csv(output_path, index=False, encoding='utf-8-sig')
+    print(f"✅ 處理完成！結果已輸出至 {output_path}")
 
 if __name__ == "__main__":
     main()

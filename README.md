@@ -49,15 +49,32 @@
 
 ```text
 .
-├┬─ configs
-│├─ banks_configs_example.yaml  #銀行設定檔_範本，檔名請修正成banks_config.yaml配合etl.py執行
-│└─ mapping_rules.yaml  # 跟銀行關聯的交易關鍵字撈取規則
-├── etl.py              # 主要 ETL 邏輯核心
-├── refine.py           # 針對特定欄位的精細化清洗
-├── load_to_db.py       # 清洗完之後存入資料庫
-├── init_db.py          # 從資料庫中提取RFM規則、回饋規則
-├── .gitignore          # 定義隱私過濾規則
-└── README.md           # 專案文件
+My-Credit-Card-ETL/
+│
+├── .gitignore             
+├── README.md              
+├── requirements.txt            # 專案依賴 (pandas, numpy, pyyaml...)
+│
+├── etl.py                      # 主程式 (Extract)
+├── refine.py                   # 主程式 (Transform/Refine)
+├── load_to_db.py               # 主程式 (新增：交易明細轉檔至資料庫)
+├── db_to_RFManalysis.py        # 主程式 (新增：商家地點RFM分析)
+├── db_to_Payment_RFM.py        # 主程式 (新增：電子支付RFM分析，分析電子支付頻率)
+├── db_to_card_RFM.py           # 主程式 (新增：信用卡RFM分析，分析卡片使用狀況)
+├── generate_mock.py            # 主程式 範例展示
+├── configs/                    # [設定檔資料夾] 
+│   ├── cards.csv               # [設定檔] 真實卡號放置地點
+│   ├── bank_config.yaml        # [設定檔] 銀行用資料設定
+│   ├── transaction_types.yaml  # [設定檔] 銀行交易類別，排除持卡人跟銀行的交易像繳款、折抵/回饋、費用(手續費/服務費)
+│   ├── merchants.csv           # [設定檔] 真實交易地點，使用Regex(正則表達式)-Replacement來清洗消費明細
+│   └── payment_gateway.csv     # [設定檔] 電子支付平台，使用Regex(正則表達式)-Replacement來整理支付通路
+├── data/                       # [帳單csv放置處] 真實的 CSV 帳單放這邊。
+│   └── (各銀行帳單)
+│
+└── examples/                   # [公開展示] 由腳本生成的範本區
+    ├── configs/                # 範例的設定檔
+    ├── example_raw.csv         # 範例的髒資料
+    └── example_refined.csv     # 範例的乾淨資料
 
 ```
 
@@ -74,15 +91,13 @@
 - [x] **玉山銀行**：已完整支援 (含 e.Point 折抵處理)
 - [x] **國泰世華**：已完整支援 (含 Cube 卡多卡號歸戶邏輯)
 - [x] **中國信託**：已完整支援
+- [x] **華南銀行**：已完整支援 (含 副檔名 偽裝)
 - [ ] **台新銀行**：徵求 CSV 格式樣本 (Help Wanted)
 - [ ] **台北富邦**：徵求 CSV 格式樣本 (Help Wanted)
 
-### 功能改善
-- [x] 實作 Excel to CSV 設定檔轉換器 (`convert.py`)
-- [ ] 增加更多第三方支付的前綴識別 (目前支援 LinePay, 街口)
-- [ ] 實作自動視覺化報表 (預計使用 Streamlit 或 Plotly)
-
 ## 📅 開發日記 (Dev Log)
+
+
 * **2026-02-02**
     * 開始分離EXCEL回饋紀錄邏輯跟跟RFM紀錄邏輯
 

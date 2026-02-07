@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 # =======================================================
 # 0. 全域常數定義 (Global Constants)
 # =======================================================
+
+# 統一欄位名稱定義 (核心依賴，請勿隨意修改)
 COL_TXN_DATE = 'Transaction_Date'
 COL_POST_DATE = 'Posting_Date'
 COL_MERCHANT = 'Merchant'
@@ -25,6 +27,15 @@ COL_TXN_TYPE = 'Transaction_Type'
 COL_MOBILE_PAY = 'Mobile_Payment'
 COL_BANK_NAME = 'Bank_Name'
 COL_RAW_COUNTRY_CURR = 'Raw_Country_Currency'   # 國泰用
+
+# 目錄路徑設定
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_DIR = os.path.join(BASE_DIR, 'configs')
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+
+# 檔案路徑設定
+FILE_BANKS_CONFIG = 'banks_config.yaml'        # 銀行 parsing 設定檔
+FILE_OUTPUT_DATA = 'result_all_banks.csv'      # ETL 產出的整合檔 (這要跟 refine.py 的 Input 一樣)
 
 # =======================================================
 # Part 1: Shared Utilities (工具函式)
@@ -171,6 +182,20 @@ def extract_card_info(df, bank_id, col_merchant, col_card_no, col_card_type):
         df[col_card_no] = df['raw_master_info'].str.extract(config['card_no'])
         if config.get('card_type'):
             df[col_card_type] = df['raw_master_info'].str.extract(config['card_type'])
+
+        # =======================================================
+        # [Fix Issue] 繳款/轉帳資料不應繼承卡號
+        # =======================================================
+        # 邏輯：如果摘要包含 "繳款" 或 "轉帳"，強制清空已填入的卡號資訊
+        mask_payment = df[col_merchant].astype(str).str.contains('繳款|轉帳', na=False, regex=True)
+        if mask_payment.any():
+            print(f"   🛡️ [防呆] 清除 {mask_payment.sum()} 筆繳款紀錄的誤填卡號...")
+            df.loc[mask_payment, col_card_no] = None
+            if col_card_type in df.columns:
+                df.loc[mask_payment, col_card_type] = None
+        # =======================================================
+
+
             
         df = df[~mask_master].copy() # 刪除 Master 行
         df = df.drop(columns=['raw_master_info'])
@@ -323,8 +348,8 @@ def process_bank_file(filepath, bank_id, config):
         # [Node 4 搬運工] 將 Node 4-1 抓到的消費地資訊填入 location 欄位
         if COL_CONSUMPTION_PLACE in df.columns:
             raw_places = df.loc[df[COL_CONSUMPTION_PLACE].notna(), COL_CONSUMPTION_PLACE].unique()
-            if len(raw_places) > 0:
-                print(f"   🔍 [Debug Node 4-1 後] 抓到的消費地 (consumption_place): {raw_places}")
+            #if len(raw_places) > 0:
+            #    print(f"   🔍 [Debug Node 4-1 後] 抓到的消費地 (consumption_place): {raw_places}")
         
         if COL_CONSUMPTION_PLACE in df.columns and COL_LOCATION in df.columns:
             print("   🔧 [玉山] 將消費地資訊填入 location_country 欄位...")
@@ -385,20 +410,27 @@ def process_bank_file(filepath, bank_id, config):
     if COL_LOCATION in df.columns:
         # [Debug] Node 5 監控
         raw_locs = df.loc[df[COL_LOCATION].notna(), COL_LOCATION].unique()
-        if len(raw_locs) > 0:
-            print(f"   🔍 [Debug Node 5] 正規化前 Location (Unique): {raw_locs}")
+        #if len(raw_locs) > 0:
+        #    print(f"   🔍 [Debug Node 5] 正規化前 Location (Unique): {raw_locs}")
             
         df[COL_LOCATION] = df[COL_LOCATION].apply(normalize_country_code)
 
         # [Debug] Node 5 監控
         norm_locs = df.loc[df[COL_LOCATION].notna(), COL_LOCATION].unique()
-        if len(norm_locs) > 0:
-            print(f"   🔍 [Debug Node 5] 正規化後 Location (Unique): {norm_locs}")
+        #if len(norm_locs) > 0:
+        #    print(f"   🔍 [Debug Node 5] 正規化後 Location (Unique): {norm_locs}")
 
-    # 6. 國內交易清理
-    mask_domestic = df[COL_LOCATION] == 'TW'
-    df.loc[mask_domestic, COL_CURRENCY] = None    # 國內不需標示幣別
-    df.loc[mask_domestic, COL_CURR_AMOUNT] = None # 國內不需標示外幣金額
+    # 6. 國內交易清理 (修正版：加入繳款豁免)
+    # 邏輯：地點是 TW，且「不是」繳款紀錄，才視為純國內消費並清空外幣欄位
+    # 這樣可以保護「台幣繳款」不被清空資訊，也能保護「被預設為 TW 的外幣繳款」
+    is_tw = df[COL_LOCATION] == 'TW'
+    is_payment = df[COL_MERCHANT].astype(str).str.contains('繳款|轉帳', na=False, regex=True)
+    
+    mask_domestic_clean = is_tw & (~is_payment)
+    
+    if mask_domestic_clean.any():
+        df.loc[mask_domestic_clean, COL_CURRENCY] = None    # 國內交易清空幣別
+        df.loc[mask_domestic_clean, COL_CURR_AMOUNT] = None # 國內交易清空外幣金額
 
     # 7. 國外交易預設 TWD
     mask_foreign_empty = (df[COL_LOCATION] != 'TW') & df[COL_CURRENCY].isna()
@@ -411,7 +443,7 @@ def process_bank_file(filepath, bank_id, config):
 # Part 4: Main Execution (主執行區)
 # =======================================================
 if __name__ == "__main__":
-    config_path = 'configs/banks_config.yaml'
+    config_path = os.path.join(CONFIG_DIR, FILE_BANKS_CONFIG)
     if not os.path.exists(config_path):
         print(f"❌ 錯誤：找不到設定檔 {config_path}")
         exit()
@@ -428,9 +460,9 @@ if __name__ == "__main__":
     data_folder = 'data'
     all_data = []
 
-    print(f"📂 掃描目錄: {data_folder}")
-    if os.path.exists(data_folder):
-        file_list = os.listdir(data_folder)
+    print(f"📂 掃描目錄: {DATA_DIR}")
+    if os.path.exists(DATA_DIR):
+        file_list = os.listdir(DATA_DIR)
         for filename in file_list:
             if filename.startswith('.') or not re.search(r'\.(csv|xlsx|xls|html)$', filename, re.I):
                 continue
@@ -442,7 +474,7 @@ if __name__ == "__main__":
                     break
             
             if detected_bank_id:
-                full_path = os.path.join(data_folder, filename)
+                full_path = os.path.join(DATA_DIR, filename)
                 cleaned_df = process_bank_file(full_path, detected_bank_id, config)
                 if cleaned_df is not None:
                     all_data.append(cleaned_df)
@@ -464,7 +496,7 @@ if __name__ == "__main__":
         print("\n=== 結果預覽 ===")
         print(final_df[final_cols].head())
         
-        output_path = "data/result_all_banks.csv"
+        output_path = os.path.join(DATA_DIR, FILE_OUTPUT_DATA)
         final_df[final_cols].to_csv(output_path, index=False, encoding='utf-8-sig')
         print(f"\n✅ 處理完成，結果已輸出至: {output_path}")
     else:

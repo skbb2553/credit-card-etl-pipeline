@@ -4,18 +4,32 @@ __pycache__/
 venv/
 *.DS_Store
 
-# 但保留 data 資料夾裡的 .gitkeep (如果有) 或範例檔
+# 保留範例檔
 !data/example_*.csv
+!configs/example_merchant_regex_rules.csv
 
-# 忽略 Excel 暫存檔 (那個醜醜的 ~$)
+# 忽略暫存檔
 ~$*.xlsx
 ~$*.doc
 ~$*.pptx
 
 # 忽略資料檔 (保護隱私！)
 *.xlsx
-*.csv
 *.db
+Himitsu.py
+configs/merchant_regex_rules.csv
+# 忽略分析結果檔、分析過程產生的中間檔
+refined_all_banks.csv
+card_rfm_result.csv
+payment_rfm_result.csv
+result_backup0119.csv
+rfm_analysis_result.csv
+spending_matrix_90d.csv
+spending_matrix_180d.csv
+spending_matrix_365d.csv
+spending_matrix_lifetime.csv
+spending_matrix_result.csv
+
 
 # 忽略 Python 產生的快取 (常見的垃圾)
 __pycache__/
