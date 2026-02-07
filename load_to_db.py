@@ -3,14 +3,19 @@ import sqlite3
 import hashlib
 import os
 import numpy as np
+# 引入 refine 以取得全域路徑變數 (Single Source of Truth)
+import refine
 
 # ==========================================
 # 0. 配置與路徑
 # ==========================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
+# 直接使用 refine 定義好的變數，不用再 os.path.join 一次 BASE_DIR
+DATA_DIR = refine.DATA_DIR
 
-INPUT_CSV = os.path.join(DATA_DIR, 'refined_all_banks.csv')
+# [輸入] 來源是 refine.py 的產出檔案 ('refined_all_banks.csv')
+INPUT_CSV = os.path.join(DATA_DIR, refine.FILE_OUTPUT_DATA)
+
+# [輸出] 資料庫設定
 DB_NAME = 'Bills.db' 
 DB_PATH = os.path.join(DATA_DIR, DB_NAME)
 TABLE_NAME = 'all_transactions'
@@ -43,6 +48,7 @@ def generate_transaction_id(row):
 def load_csv_and_save_to_db():
     if not os.path.exists(INPUT_CSV):
         print(f"❌ 錯誤: 找不到 CSV 檔案: {INPUT_CSV}")
+        print(f"   請先執行 'python refine.py' 來產出資料。")
         return
 
     print(f"📂 讀取 CSV: {INPUT_CSV}")
@@ -110,8 +116,6 @@ def load_csv_and_save_to_db():
         print(f"🔌 連接資料庫: {DB_PATH}")
         
         # 使用 'replace' 模式：每次全量覆蓋，保證與 ETL 結果一致
-        # 如果您想要保留歷史紀錄，可以改用 'append' 配合 transaction_id 去重，
-        # 但既然 etl.py 是全量跑，這裡 replace 是最乾淨的。
         df_db.to_sql(TABLE_NAME, conn, if_exists='replace', index=False)
         
         # 5. 建立索引 (Optimization)

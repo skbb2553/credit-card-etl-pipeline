@@ -7,11 +7,17 @@ from datetime import datetime, timedelta
 # ==========================================
 # 設定區
 # ==========================================
-DB_FILE = 'data/Bills.db'
-PAYMENT_CONFIG_FILE = 'configs/payment_regex_rules.csv'
+# [新增] 引入 refine 以取得全域路徑變數
+import refine 
 
-# 設定要分析的 Priority 門檻 (包含此數值)
-# 根據您的描述，我們只分析特定 Priority 以上的支付方式 (如第三方支付)
+# ==========================================
+# 設定區
+# ==========================================
+# 使用 refine 模組的路徑
+DB_PATH = os.path.join(refine.DATA_DIR, 'Bills.db')
+PAYMENT_CONFIG_PATH = os.path.join(refine.CONFIG_DIR, refine.FILE_CHANNELS) # 對應 payment_gateway.csv
+
+# 設定要分析的 Priority 門檻
 TARGET_PRIORITY_THRESHOLD = 20
 
 SHORT_TERM_DAYS = 365
@@ -102,11 +108,11 @@ def main():
     print("=== 開始支付方式 (Payment) RFM 分析 ===")
     
     # 1. 載入支付設定
-    prefix_map, valid_prefixes = load_payment_config(PAYMENT_CONFIG_FILE)
+    prefix_map, valid_prefixes = load_payment_config(PAYMENT_CONFIG_PATH)
     if not prefix_map: return
 
     # 2. 讀取資料庫
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         print("讀取資料庫...")
         df = pd.read_sql("SELECT transaction_id, transaction_date, merchant_name, payment_amount, transaction_type FROM all_transactions", conn)
     
@@ -167,7 +173,7 @@ def main():
     final_df.sort_values(by='life_frequency', ascending=False, inplace=True) # 支付方式依頻次排序較合理
     final_df.to_csv(OUTPUT_CSV)
     
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         final_df.to_sql(OUTPUT_TABLE_NAME, conn, if_exists='replace', index=True)
         
     print(f"\n完成！已輸出至 {OUTPUT_CSV} 與資料庫。")

@@ -28,9 +28,11 @@
 ### 2. 資料隱私優先 (Privacy First Architecture)
 * **去敏化處理：** 程式邏輯與敏感數據 (如卡號、個資) 完全分離。
 * **環境變數管理：** 使用 `.gitignore` 與 Config 檔案管理敏感設定，確保上傳至雲端的程式碼不含任何個資。
+* **本地端密鑰管理 (Himitsu)**： 支援本地端卡號映射 (Himitsu.py)，將真實卡號轉換為虛擬代碼（如將真實卡轉為 Mock國泰CUBE卡），確保 Git Repo 內不含任何敏感個資。
 
 ### 3. 商業邏輯增強 (Business Logic Enrichment)
 * **RFM 準備：** 保留交易時間與頻率特徵，為後續的 **Recency, Frequency, Monetary** 分析建立基礎。
+* **RFM 分析：** 提供四個RFM分析邏輯：基本商家、支付方式(第三方支付)、信用卡使用RFM。
 * **回饋關聯鍵：** 保留卡號特徵碼 (Last 4 digits)，作為後續計算「現金回饋率」的關聯鍵 (Foreign Key)。
 
 ---
@@ -40,8 +42,8 @@
 本專案採用 **AI 輔助開發 (AI-Assisted Development)** 模式，結合人類架構師的邏輯與 LLM 的算力。
 
 * **Architecture (人類主導):** 定義資料流 (Data Flow)、Schema 設計、隱私邊界與商業目標。
-* **Implementation (AI 加速):** 利用 Vibe Coding 模式快速生成繁瑣的 Regex 規則與 Pandas 語法。
-* **Verification (嚴格審查):** 所有生成代碼皆經過人工 Code Review，並通過真實數據的邏輯驗證。
+* **Implementation (AI 加速):** 利用 Vibe Coding 模式快速生成繁瑣的 Regex 規則與 Pandas 語法。本專案使用Gemini Pro模型生成。
+* **Verification (嚴格審查):** 所有生成代碼皆經過人工 Code Review，並通過真實數據的邏輯驗證。透過提示詞要求變數命名不可任意變動。
 
 ---
 
@@ -92,18 +94,24 @@ My-Credit-Card-ETL/
 - [x] **國泰世華**：已完整支援 (含 Cube 卡多卡號歸戶邏輯)
 - [x] **中國信託**：已完整支援
 - [x] **華南銀行**：已完整支援 (含 副檔名 偽裝)
+- [ ] **永豐銀行**：(下次更新時新增)
 - [ ] **台新銀行**：徵求 CSV 格式樣本 (Help Wanted)
 - [ ] **台北富邦**：徵求 CSV 格式樣本 (Help Wanted)
 
 ## 📅 開發日記 (Dev Log)
 
+* **2026-02-07**
+    * 建立 Mock Data Generator (generate_mock.py) 與隱私分流架構 (Himitsu.py)。
+    * 重構專案檔案命名 (merchants.csv, payment_gateway.csv) 以符合工程慣例。
+    * RFM記錄邏輯上傳
+    * 支付規則(Regex)已上傳，整理商家規則(Regex)中
 
 * **2026-02-02**
     * 開始分離EXCEL回饋紀錄邏輯跟跟RFM紀錄邏輯
 
 * **2026-02-01**
     * 完成 `refine.py` 第一版。
-    * 完成 `convert.py` 的自動降級機制（找不到真實檔時自動讀取範本）。
+    * 完成 自動降級機制（找不到真實檔時自動讀取範本）。
 
 * **2026-01-28**
     * 重構了 `refine.py` 的邏輯。遇到一個 Bug：有些卡號末四碼會重複，後來決定加入「卡片名稱」作為第二鍵值來解決。
