@@ -22,8 +22,10 @@
 ## 🚀 核心功能 (Key Features)
 
 ### 1. 智慧清洗與標準化 (Data Sanitization)
-* **Regex 商家識別：** 利用正則表達式 (Regular Expressions) 自動歸一化商家名稱（例如：將所有 `Uber*Eats` 變體統一為 `Uber Eats`）。
 * **日期格式統整：** 處理不同銀行 (國泰、玉山等) 不一致的日期格式字串。
+* **Regex 商家識別：** 利用正則表達式 (Regular Expressions) 自動歸一化商家名稱（例如：將所有 `Uber*Eats` 變體統一為 `Uber Eats`）。
+* **Regex 支付識別：** 利用正則表達式 (Regular Expressions) 自動歸一化第三方支付名稱（例如：將所有 `iCash*Pay` 變體統一為 `ICP`）。
+* **資料庫配置：** 使用sqlite3資料庫，方便直接使用SQL進行比較複雜的聚合查詢。另外資料庫本地化、輕量化、可攜帶之餘還可以給後續其他BI軟體連接處理。 
 
 ### 2. 資料隱私優先 (Privacy First Architecture)
 * **去敏化處理：** 程式邏輯與敏感數據 (如卡號、個資) 完全分離。
@@ -32,7 +34,7 @@
 
 ### 3. 商業邏輯增強 (Business Logic Enrichment)
 * **RFM 準備：** 保留交易時間與頻率特徵，為後續的 **Recency, Frequency, Monetary** 分析建立基礎。
-* **RFM 分析：** 提供四個RFM分析邏輯：基本商家、支付方式(第三方支付)、信用卡使用RFM。
+* **RFM 分析：** 提供RFM分析邏輯：基本商家RFM、支付方式RFM(第三方支付)、信用卡使用RFM。
 * **回饋關聯鍵：** 保留卡號特徵碼 (Last 4 digits)，作為後續計算「現金回饋率」的關聯鍵 (Foreign Key)。
 
 ---
@@ -103,8 +105,8 @@ My-Credit-Card-ETL/
 * **2026-02-07**
     * 建立 Mock Data Generator (generate_mock.py) 與隱私分流架構 (Himitsu.py)。
     * 重構專案檔案命名 (merchants.csv, payment_gateway.csv) 以符合工程慣例。
-    * RFM記錄邏輯上傳
-    * 支付規則(Regex)已上傳，整理商家規則(Regex)中
+    * RFM記錄邏輯上傳。
+    * 支付規則(Regex)上傳，整理商家規則(Regex)中。
 
 * **2026-02-02**
     * 開始分離EXCEL回饋紀錄邏輯跟跟RFM紀錄邏輯
