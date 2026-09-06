@@ -115,12 +115,12 @@ class TestBankSpecificFeatures:
         # 1. 驗證 stop_at_keyword 生效，不包含 "正卡消費"
         assert not df[const.COL_MERCHANT].astype(str).str.contains("正卡消費").any()
 
-        # 2. 驗證 STEAM 國別與幣別解析
-        steam_row = df[df[const.COL_MERCHANT].astype(str).str.contains("STEAM")]
-        assert not steam_row.empty
-        assert steam_row[const.COL_LOCATION].iloc[0] == "US"
-        assert steam_row[const.COL_CURRENCY].iloc[0] == "USD"
-        assert steam_row[const.COL_CURR_AMOUNT].iloc[0] == 30.0
+        # 2. 驗證 APPLE.COM/BILL 國別與幣別解析
+        apple_row = df[df[const.COL_MERCHANT].astype(str).str.contains("APPLE.COM/BILL")]
+        assert not apple_row.empty
+        assert apple_row[const.COL_LOCATION].iloc[0] == "IE"
+        assert apple_row[const.COL_CURRENCY].iloc[0] == "TWD"
+        assert apple_row[const.COL_CURR_AMOUNT].iloc[0] == 30.0
 
     def test_ctbc_features(self):
         """測試中信：cp950 編碼繁體中文無亂碼、消費地解析"""
