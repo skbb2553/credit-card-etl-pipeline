@@ -1,4 +1,0 @@
-merchant_pattern,normalized_merchant,priority,category,sub_category,rfm_exclusion,備註
-.*統一超商.*,統一超商,70,便利商店,,FALSE,統一集團通路，統一超商的所有實體門市^(?!.*_)
-
-

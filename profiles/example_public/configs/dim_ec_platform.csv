@@ -1,0 +1,6 @@
+ec_platform_pattern,ec_platform,priority,ec_platform_type,ec_category,ec_sub_category,rfm_exclusion,說明
+.*(STEAM.*PURCHASE).*,STEAM,1,DigitalDistribution,電子商務,文創娛樂,FALSE,遊戲網購平台
+(?i).*(APPLE.COM/BILL|ITUNES.COM/BILL).*,APPLE.COM/BILL,4,DigitalDistribution,電子商務,,FALSE,APPLE服務平台
+(?i).*(樂購蝦皮|蝦皮|SHOPEE|ＳＨＯＰＥＥ).*,蝦皮購物,20,RetailEC,電子商務,百貨量販,FALSE,蝦皮購物
+(?i).*(PCHOME|ＰＣＨＯＭＥ|網家).*,PChome,24,RetailEC,電子商務,百貨量販,FALSE,PChome網購平台
+(?i).*(MOMO.*EC).*,MOMO網購,26,RetailEC,電子商務,百貨量販,FALSE,MOMO網購平台
