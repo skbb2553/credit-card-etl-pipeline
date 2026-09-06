@@ -67,6 +67,9 @@ class CubeParser(BaseCsvParser):
         # 7. 最終正規化 (補齊 TWD 等)
         df = self._finalize_normalization(df)
 
+        # 8. 強制型別執法 (Enforce Dtypes)
+        df = self._enforce_dtypes(df)
+
         return df
 
     def _split_dual_card_numbers(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -86,16 +89,16 @@ class CubeParser(BaseCsvParser):
         vpc_nos = []
 
         for val in card_series:
-            val_str = val.strip()
+            val_str = str(val).strip() if pd.notna(val) else ''
             if val_str and val_str.lower() not in ['nan', 'none']:
-                parts = [p.strip().replace('.0', '') for p in re.split(r'[/]', val_str) if p.strip()]
+                parts = [str(p).strip().replace('.0', '') for p in re.split(r'[/]', val_str) if str(p).strip()]
                 if len(parts) >= 2: 
-                    c_no = str(parts[0]).zfill(4) if parts[0].isdigit() and len(parts[0]) <= 4 else str(parts[0])
-                    v_no = str(parts[1]).zfill(4) if parts[1].isdigit() and len(parts[1]) <= 4 else str(parts[1])
+                    c_no = str(parts[0]).zfill(4) if str(parts[0]).isdigit() and len(str(parts[0])) <= 4 else str(parts[0])
+                    v_no = str(parts[1]).zfill(4) if str(parts[1]).isdigit() and len(str(parts[1])) <= 4 else str(parts[1])
                     card_nos.append(c_no)
                     vpc_nos.append(v_no)
                 elif len(parts) == 1:
-                    c_no = str(parts[0]).zfill(4) if parts[0].isdigit() and len(parts[0]) <= 4 else str(parts[0])
+                    c_no = str(parts[0]).zfill(4) if str(parts[0]).isdigit() and len(str(parts[0])) <= 4 else str(parts[0])
                     card_nos.append(c_no)
                     vpc_nos.append('')
                 else:

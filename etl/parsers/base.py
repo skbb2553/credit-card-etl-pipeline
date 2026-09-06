@@ -272,9 +272,9 @@ class BaseCsvParser(BaseBillParser):
                     break
                 content_buffer.append(line)
             if found_header and content_buffer:
-                return pd.read_csv(io.StringIO("".join(content_buffer)), on_bad_lines='skip')
+                return pd.read_csv(io.StringIO("".join(content_buffer)), on_bad_lines='skip', dtype=str)
             else:
-                return pd.read_csv(filepath, encoding=encoding, header=0, on_bad_lines='skip')
+                return pd.read_csv(filepath, encoding=encoding, header=0, on_bad_lines='skip', dtype=str)
         except Exception as e:
             logger.error(f"❌ Smart Read 失敗 ({os.path.basename(filepath)}): {e}")
             return pd.DataFrame()
